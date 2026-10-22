@@ -1,0 +1,30 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: accessguard
+      POSTGRES_PASSWORD: accessguard
+      POSTGRES_DB: accessguard
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U accessguard"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql+psycopg://accessguard:accessguard@db:5432/accessguard
+      # Demo tokens. Replace them before using this for anything real.
+      ACCESSGUARD_TOKENS: ${ACCESSGUARD_TOKENS:-admin-token-demo:alice:admin,audit-token-demo:bob:auditor}
+    ports:
+      - "8000:8000"
+    command: ["sh", "-c", "accessguard seed && accessguard serve --host 0.0.0.0 --port 8000"]
+
+volumes:
+  pgdata:

@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AccessGuard</title>
+<style>
+:root{
+  --bg:#F5F3FC;--surface:#FFFFFF;--ink:#221A44;--muted:#5F5681;--line:#E2DCF3;--soft:#EFEBFA;
+  --accent:#5B3FD1;--accent-ink:#FFFFFF;
+  --crit:#B3261E;--crit-bg:#FCE9E7;--high:#B8500A;--high-bg:#FDEDDC;--med:#7A6200;--med-bg:#FBF3CF;--low:#2F6B3A;--low-bg:#E3F3E4;
+  --ok:#1F7A4D;--ok-bg:#DFF3E8;color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root{
+  --bg:#14102A;--surface:#1D1839;--ink:#EFEBFF;--muted:#B0A6D8;--line:#362F60;--soft:#262046;
+  --accent:#A999FF;--accent-ink:#14102A;
+  --crit:#FF9C94;--crit-bg:#3E1D26;--high:#FFB77A;--high-bg:#3F2A1B;--med:#EBCD54;--med-bg:#383119;--low:#98D69B;--low-bg:#1F3622;
+  --ok:#78D6A5;--ok-bg:#183626;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
+[hidden]{display:none!important}
+.wrap{max-width:980px;margin:0 auto;padding:0 20px}
+header{background:var(--surface);border-bottom:1px solid var(--line)}
+header .wrap{display:flex;align-items:center;justify-content:space-between;height:60px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.1rem}
+.logo{width:28px;height:28px;border-radius:8px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-size:.95rem}
+button{font:inherit;font-weight:600;padding:9px 16px;border:0;border-radius:10px;background:var(--accent);color:var(--accent-ink);cursor:pointer}
+button.ghost{background:transparent;color:var(--accent);border:1.5px solid var(--accent)}
+button.small{padding:6px 12px;font-size:.9rem}
+button.link{background:none;color:var(--muted);padding:6px 8px;font-weight:500}
+button:focus-visible,input:focus-visible,textarea:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+input,textarea{font:inherit;width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
+.msg{min-height:1.5em;color:var(--muted);font-size:.95rem;margin:14px 0 0}
+.msg.err{color:var(--crit)}
+
+/* sign in */
+#login{max-width:460px;margin:9vh auto 0;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:30px}
+#login h1{margin:0 0 8px;font-size:1.5rem}
+#login p{color:var(--muted);margin:0 0 20px}
+#login label{display:block;font-weight:600;margin-bottom:6px}
+#login .row{display:flex;gap:10px;margin-top:12px}
+.hint{font-size:.88rem;color:var(--muted);margin-top:14px}
+code{background:var(--soft);padding:2px 6px;border-radius:6px;font-size:.9em}
+
+/* summary */
+.hero{padding:30px 0 6px}
+.hero h1{font-size:1.65rem;line-height:1.25;margin:0 0 6px}
+.hero p{margin:0;color:var(--muted)}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0 6px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:18px 0}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.stat .label{color:var(--muted);font-size:.88rem}
+.stat .value{font-size:1.7rem;font-weight:700;line-height:1.2}
+.stat .note{color:var(--muted);font-size:.85rem}
+.stat.good .value{color:var(--ok)}.stat.bad .value{color:var(--crit)}
+details.how{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 16px;margin-bottom:6px}
+details.how summary{cursor:pointer;font-weight:600}
+details.how p{color:var(--muted);margin:10px 0 0}
+
+/* tabs */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:22px 0 18px;overflow-x:auto}
+.tab{background:none;color:var(--muted);border-radius:10px 10px 0 0;padding:10px 16px;font-weight:600;border-bottom:3px solid transparent;white-space:nowrap}
+.tab[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
+.count{display:inline-block;min-width:22px;padding:0 7px;margin-left:6px;border-radius:999px;background:var(--soft);color:var(--ink);font-size:.8rem;text-align:center}
+h2{font-size:1.05rem;margin:22px 0 4px}
+.sub{color:var(--muted);font-size:.92rem;margin:0 0 12px}
+
+/* finding cards */
+.finding{display:flex;gap:14px;justify-content:space-between;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-left:6px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:10px}
+.finding.critical{border-left-color:var(--crit)}.finding.high{border-left-color:var(--high)}
+.finding.medium{border-left-color:var(--med)}.finding.low{border-left-color:var(--low)}
+.finding.accepted{opacity:.88}
+.finding h3{margin:0 0 2px;font-size:1rem}
+.finding .who{margin:0;color:var(--muted);font-size:.95rem}
+.finding .who b{color:var(--ink)}
+.tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.pill{display:inline-block;padding:2px 10px;border-radius:999px;font-size:.78rem;font-weight:700;letter-spacing:.02em;text-transform:uppercase}
+.pill.critical{background:var(--crit-bg);color:var(--crit)}.pill.high{background:var(--high-bg);color:var(--high)}
+.pill.medium{background:var(--med-bg);color:var(--med)}.pill.low{background:var(--low-bg);color:var(--low)}
+.pill.none{background:var(--ok-bg);color:var(--ok)}
+.pill.plain{background:var(--soft);color:var(--muted);text-transform:none;font-weight:600}
+.note-box{margin-top:8px;padding:8px 12px;background:var(--soft);border-radius:10px;font-size:.9rem;color:var(--muted)}
+.empty{background:var(--surface);border:1px dashed var(--line);border-radius:14px;padding:22px;text-align:center;color:var(--muted)}
+
+/* rows */
+.rowcard{display:grid;grid-template-columns:1fr 150px 110px;gap:14px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 16px;margin-bottom:8px}
+.rowcard .name{font-weight:600}.rowcard .meta{color:var(--muted);font-size:.9rem}
+.bar{height:8px;border-radius:99px;background:var(--soft);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:99px}
+@media (max-width:620px){.rowcard{grid-template-columns:1fr}.finding{flex-direction:column}}
+
+/* timeline */
+.chain{display:flex;gap:12px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 16px;margin-bottom:14px}
+.chain .dot{width:12px;height:12px;border-radius:50%;background:var(--ok);flex:none}
+.chain.broken .dot{background:var(--crit)}
+.chain p{margin:0;font-size:.92rem;color:var(--muted)}
+.chain strong{display:block;color:var(--ink);font-size:1rem}
+.event{display:grid;grid-template-columns:42px 1fr auto;gap:12px;padding:10px 4px;border-bottom:1px solid var(--line);align-items:baseline}
+.event .seq{color:var(--muted);font-size:.85rem}
+.event .what{font-weight:600}.event .detail{color:var(--muted);font-size:.9rem}
+.event time{color:var(--muted);font-size:.85rem;white-space:nowrap}
+
+dialog{border:0;border-radius:18px;padding:24px;max-width:480px;width:calc(100% - 32px);background:var(--surface);color:var(--ink)}
+dialog::backdrop{background:rgba(20,16,42,.55)}
+dialog h3{margin:0 0 4px}dialog p{color:var(--muted);margin:0 0 14px}
+dialog .row{display:flex;justify-content:flex-end;gap:10px;margin-top:14px}
+.counter{font-size:.85rem;color:var(--muted);margin-top:6px}
+footer{color:var(--muted);font-size:.85rem;text-align:center;padding:28px 0 50px}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <div class="brand"><span class="logo" aria-hidden="true">&#10003;</span>AccessGuard</div>
+  <button class="link" id="signout" hidden>Sign out</button>
+</div></header>
+
+<main class="wrap">
+  <section id="login">
+    <h1>Who has access they should not?</h1>
+    <p>AccessGuard checks whether any one person holds a combination of permissions that should be split between people, such as being able to both create and approve a payment.</p>
+    <form id="auth">
+      <label for="token">API token</label>
+      <input id="token" type="password" autocomplete="off" placeholder="Paste your token here">
+      <div class="row"><button type="submit">View dashboard</button></div>
+    </form>
+    <p class="hint">Running the demo? Use the admin token from your terminal, for example <code>admin-token-demo</code>.</p>
+    <p id="loginmsg" class="msg err" role="alert"></p>
+  </section>
+
+  <div id="app" hidden>
+    <div class="hero">
+      <h1 id="headline"></h1>
+      <p id="subline"></p>
+      <div class="actions">
+        <button id="scan">Check everyone now</button>
+        <button class="ghost" id="download">Download report (CSV)</button>
+      </div>
+      <p id="msg" class="msg" role="status"></p>
+    </div>
+
+    <div class="stats" id="stats"></div>
+
+    <details class="how">
+      <summary>How to read this page</summary>
+      <p>Each organisation defines pairs of permissions that one person should not hold together. A finding is a person who holds both halves of a pair, sometimes through two different roles. Findings are rated by how much harm the combination could do. A manager can accept a finding with a written reason, which is recorded, or fix it by removing a role. Every change is written to a log that detects tampering.</p>
+    </details>
+
+    <div class="tabs" role="tablist" aria-label="Sections">
+      <button class="tab" role="tab" id="t-findings" aria-selected="true" data-tab="findings">Needs attention<span class="count" id="c-findings">0</span></button>
+      <button class="tab" role="tab" id="t-people" aria-selected="false" data-tab="people">By person</button>
+      <button class="tab" role="tab" id="t-controls" aria-selected="false" data-tab="controls">By control</button>
+      <button class="tab" role="tab" id="t-log" aria-selected="false" data-tab="log">Activity log</button>
+    </div>
+
+    <section id="p-findings" role="tabpanel" aria-labelledby="t-findings"></section>
+    <section id="p-people" role="tabpanel" aria-labelledby="t-people" hidden></section>
+    <section id="p-controls" role="tabpanel" aria-labelledby="t-controls" hidden></section>
+    <section id="p-log" role="tabpanel" aria-labelledby="t-log" hidden></section>
+  </div>
+</main>
+<footer>AccessGuard &middot; separation of duties monitoring</footer>
+
+<dialog id="accept-dlg">
+  <form method="dialog" id="accept-form">
+    <h3>Accept this risk</h3>
+    <p id="accept-what"></p>
+    <label for="why"><b>Why is this acceptable?</b></label>
+    <textarea id="why" rows="4" placeholder="For example: approved by the CFO until the new approver starts in March."></textarea>
+    <div class="counter" id="counter">Write at least 10 characters.</div>
+    <div class="row">
+      <button type="button" class="ghost" id="accept-cancel">Cancel</button>
+      <button type="submit" id="accept-ok" disabled>Accept and record</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+function el(tag, cls, text) { const e = document.createElement(tag); if (cls) e.className = cls; if (text !== undefined) e.textContent = text; return e; }
+let token = ""; try { token = sessionStorage.getItem("ag-token") || ""; } catch (e) {}
+let people = {};   // username -> {full_name, department}
+
+async function api(path, options = {}) {
+  const res = await fetch(path, { ...options, headers: { "Authorization": "Bearer " + token, "Content-Type": "application/json", ...(options.headers || {}) } });
+  if (!res.ok) {
+    let d = res.statusText; try { d = (await res.json()).detail || d; } catch (e) {}
+    if (res.status === 401) d = "That token was not accepted.";
+    const err = new Error(typeof d === "string" ? d : "Request failed (" + res.status + ")"); err.status = res.status; throw err;
+  }
+  return res;
+}
+const SEV_ORDER = { critical: 0, high: 1, medium: 2, low: 3 };
+const SEV_LABEL = { critical: "Critical", high: "High", medium: "Medium", low: "Low" };
+const ACTIONS = {
+  "user.created": "User added", "user.disabled": "User disabled", "role.created": "Role created", "role.assigned": "Role granted",
+  "role.revoked": "Role removed", "role.permission_added": "Permission added to role", "permission.created": "Permission created",
+  "rule.created": "Rule created", "rule.activated": "Rule turned on", "rule.deactivated": "Rule turned off",
+  "scan.completed": "Scan completed", "violation.detected": "Conflict found", "violation.accepted": "Risk accepted",
+  "violation.auto_closed": "Conflict resolved"
+};
+const CONTROL_HELP = {
+  "AC-5": "Split risky duties between different people",
+  "AC-6": "Give people only the access they need",
+  "AC-2": "Manage who has accounts and approve them properly",
+  "AU-9": "Protect audit logs from being altered"
+};
+function personName(u) { const p = people[u]; return p ? p.full_name : u; }
+
+function stat(label, value, note, cls) {
+  const d = el("div", "stat " + (cls || "")); d.append(el("div", "label", label), el("div", "value", value), el("div", "note", note)); return d;
+}
+function pill(sev) { return el("span", "pill " + sev, SEV_LABEL[sev] || sev); }
+
+function findingCard(v) {
+  const card = el("div", "finding " + v.severity + (v.status === "accepted" ? " accepted" : ""));
+  const left = el("div");
+  left.append(el("h3", null, v.rule_name));
+  const who = el("p", "who");
+  const dept = people[v.username] ? " (" + people[v.username].department + ")" : "";
+  const via = v.roles_a.concat(v.roles_b);
+  const b = el("b", null, personName(v.username));
+  who.append(b, document.createTextNode(dept + " holds both through: " + via.join(" and ")));
+  left.append(who);
+  const tags = el("div", "tags");
+  tags.append(pill(v.severity), el("span", "pill plain", "NIST " + v.nist_control), el("span", "pill plain", v.rule));
+  left.append(tags);
+  if (v.status === "accepted" && v.resolution_note) {
+    left.append(el("div", "note-box", "Accepted by " + (v.resolved_by || "an admin") + ": " + v.resolution_note));
+  }
+  card.append(left);
+  if (v.status === "open") {
+    const btn = el("button", "ghost small", "Accept risk"); btn.onclick = () => openAccept(v); card.append(btn);
+  }
+  return card;
+}
+
+function renderFindings(viol) {
+  const open = viol.filter(v => v.status === "open"), acc = viol.filter(v => v.status === "accepted");
+  const sort = (a, b) => SEV_ORDER[a.severity] - SEV_ORDER[b.severity] || a.id - b.id;
+  open.sort(sort); acc.sort(sort);
+  const p = $("p-findings"); p.replaceChildren();
+  p.append(el("h2", null, "Needs a decision"), el("p", "sub", "People who currently hold a risky combination. Most serious first."));
+  if (!open.length) p.append(el("div", "empty", "Nothing needs attention right now."));
+  open.forEach(v => p.append(findingCard(v)));
+  p.append(el("h2", null, "Accepted with a reason"), el("p", "sub", "Known risks that someone signed off on. They still count toward risk, at half weight."));
+  if (!acc.length) p.append(el("div", "empty", "No accepted risks."));
+  acc.forEach(v => p.append(findingCard(v)));
+  $("c-findings").textContent = open.length;
+}
+
+function renderPeople(users) {
+  const p = $("p-people"); p.replaceChildren();
+  p.append(el("h2", null, "Risk by person"), el("p", "sub", "A person's score adds up their findings: critical 10, high 5, medium 2, low 1. Accepted findings count half."));
+  if (!users.length) p.append(el("div", "empty", "Nobody has any findings."));
+  const max = Math.max(1, ...users.map(u => u.score));
+  users.slice().sort((a, b) => b.score - a.score).forEach(u => {
+    const r = el("div", "rowcard"), l = el("div");
+    l.append(el("div", "name", u.full_name), el("div", "meta", u.department + " · " + u.open + " open, " + u.accepted + " accepted"));
+    const bar = el("div", "bar"), fillBar = el("i"); fillBar.style.width = Math.round(100 * u.score / max) + "%"; bar.append(fillBar);
+    const sev = u.rating.toLowerCase(); const rate = el("span", "pill " + (SEV_ORDER[sev] !== undefined ? sev : "none"), u.rating + " · " + u.score);
+    r.append(l, bar, rate); p.append(r);
+  });
+}
+
+function renderControls(controls) {
+  const p = $("p-controls"); p.replaceChildren();
+  p.append(el("h2", null, "Findings by NIST SP 800-53 control"), el("p", "sub", "Auditors report by control. Each finding belongs to one."));
+  const max = Math.max(1, ...controls.map(c => c.score));
+  controls.forEach(c => {
+    const r = el("div", "rowcard"), l = el("div");
+    l.append(el("div", "name", c.control + " · " + c.title), el("div", "meta", (CONTROL_HELP[c.control] || "") + " · " + c.open + " open, " + c.accepted + " accepted"));
+    const bar = el("div", "bar"), fillBar = el("i"); fillBar.style.width = Math.round(100 * c.score / max) + "%"; bar.append(fillBar);
+    r.append(l, bar, el("span", "pill plain", "Score " + c.score)); p.append(r);
+  });
+}
+
+function renderLog(audit, chain) {
+  const p = $("p-log"); p.replaceChildren();
+  const box = el("div", "chain" + (chain.ok ? "" : " broken")), txt = el("div");
+  const head = el("strong", null, chain.ok ? "Log is intact (" + chain.checked + " entries verified)" : "Log was tampered with at entry " + chain.first_bad_seq);
+  txt.append(head, el("p", null, "Every entry contains a fingerprint of the one before it, so changing or deleting history breaks the chain and shows up here."));
+  box.append(el("span", "dot"), txt); p.append(box);
+  p.append(el("h2", null, "Recent activity"));
+  audit.forEach(a => {
+    const row = el("div", "event");
+    const d = el("div"); d.append(el("div", "what", ACTIONS[a.action] || a.action), el("div", "detail", a.actor + " · " + a.entity_type + " " + a.entity_id));
+    row.append(el("span", "seq", "#" + a.seq), d, el("time", null, a.ts.replace("T", " ").slice(5, 16) + " UTC"));
+    p.append(row);
+  });
+}
+
+async function load() {
+  try {
+    const [risk, viol, audit, chain] = await Promise.all([
+      api("/reports/risk").then(r => r.json()),
+      Promise.all([api("/violations?status=open"), api("/violations?status=accepted")]).then(rs => Promise.all(rs.map(r => r.json()))).then(([a, b]) => a.concat(b)),
+      api("/audit?limit=15").then(r => r.json()),
+      api("/audit/verify").then(r => r.json())]);
+    people = {}; risk.users.forEach(u => { people[u.username] = u; });
+    $("login").hidden = true; $("app").hidden = false; $("signout").hidden = false; $("loginmsg").textContent = "";
+    const open = risk.totals.open, acc = risk.totals.accepted;
+    const peopleOpen = new Set(viol.filter(v => v.status === "open").map(v => v.username)).size;
+    $("headline").textContent = open === 0 ? "No one holds a risky combination of access." :
+      peopleOpen + (peopleOpen === 1 ? " person holds" : " people hold") + " access that should be split between people.";
+    $("subline").textContent = open + " open finding" + (open === 1 ? "" : "s") + ", " + acc + " accepted with a reason. Checked " + new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }) + ".";
+    const crit = risk.by_severity.critical.open + risk.by_severity.high.open;
+    const top = risk.users.slice().sort((a, b) => b.score - a.score)[0];
+    $("stats").replaceChildren(
+      stat("Needs attention", open, "findings waiting for a decision", open ? "bad" : "good"),
+      stat("Serious (critical or high)", crit, "most harmful combinations", crit ? "bad" : "good"),
+      stat("Highest risk person", top && top.score ? top.full_name : "None", top && top.score ? "score " + top.score + ", " + top.rating : "no findings"),
+      stat("Audit log", chain.ok ? "Intact" : "Broken", chain.checked + " entries verified", chain.ok ? "good" : "bad"));
+    renderFindings(viol); renderPeople(risk.users); renderControls(risk.by_control); renderLog(audit, chain);
+  } catch (e) {
+    if (e.status === 401 || $("app").hidden) { $("loginmsg").textContent = e.message; $("login").hidden = false; $("app").hidden = true; $("signout").hidden = true; }
+    else say(e.message, true);
+  }
+}
+function say(text, isErr) { const m = $("msg"); m.textContent = text; m.className = "msg" + (isErr ? " err" : ""); }
+
+/* accept-risk dialog */
+let pending = null;
+function openAccept(v) {
+  pending = v; $("accept-what").textContent = personName(v.username) + ": " + v.rule_name;
+  $("why").value = ""; $("counter").textContent = "Write at least 10 characters."; $("accept-ok").disabled = true; $("accept-dlg").showModal(); $("why").focus();
+}
+$("why").addEventListener("input", () => {
+  const n = $("why").value.trim().length; $("accept-ok").disabled = n < 10;
+  $("counter").textContent = n < 10 ? "Write at least 10 characters (" + n + " so far)." : "Looks good.";
+});
+$("accept-cancel").onclick = () => $("accept-dlg").close();
+$("accept-form").addEventListener("submit", async e => {
+  e.preventDefault(); const justification = $("why").value.trim(); $("accept-dlg").close();
+  try { await api("/violations/" + pending.id + "/accept", { method: "POST", body: JSON.stringify({ justification }) }); say("Risk accepted and recorded in the log."); }
+  catch (err) { say(err.status === 403 ? "Your token is read only. Use an admin token to accept risks." : err.message, true); return; }
+  load();
+});
+
+/* tabs */
+document.querySelectorAll(".tab").forEach(t => t.addEventListener("click", () => {
+  document.querySelectorAll(".tab").forEach(x => x.setAttribute("aria-selected", String(x === t)));
+  ["findings", "people", "controls", "log"].forEach(k => { $("p-" + k).hidden = (k !== t.dataset.tab); });
+}));
+
+$("auth").addEventListener("submit", e => {
+  e.preventDefault(); token = $("token").value.trim(); try { sessionStorage.setItem("ag-token", token); } catch (x) {}
+  $("token").value = ""; load();
+});
+$("signout").onclick = () => { token = ""; try { sessionStorage.removeItem("ag-token"); } catch (x) {} $("app").hidden = true; $("login").hidden = false; $("signout").hidden = true; };
+$("scan").onclick = async () => {
+  try { const r = await (await api("/scans", { method: "POST" })).json();
+    say(r.created || r.closed ? "Scan finished: " + r.created + " new, " + r.closed + " resolved." : "Scan finished. Nothing has changed since the last check."); }
+  catch (e) { say(e.status === 403 ? "Your token is read only. Use an admin token to run scans." : e.message, true); return; }
+  load();
+};
+$("download").onclick = async () => {
+  try { const blob = await (await api("/reports/exceptions.csv")).blob(); const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = "exceptions.csv"; a.click(); URL.revokeObjectURL(a.href); }
+  catch (e) { say(e.message, true); }
+};
+if (token) load();
+</script>
+</body>
+</html>

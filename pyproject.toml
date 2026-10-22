@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "accessguard"
+version = "0.1.0"
+description = "Access governance service: role-based access, separation of duties detection, and a tamper-evident audit trail"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn>=0.27",
+    "sqlalchemy>=2.0",
+    "pydantic>=2.5",
+]
+
+[project.optional-dependencies]
+postgres = ["psycopg[binary]>=3.1"]
+dev = ["pytest", "httpx"]
+
+[project.scripts]
+accessguard = "accessguard.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+accessguard = ["static/*.html"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
